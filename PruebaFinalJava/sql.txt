@@ -1,0 +1,7 @@
+create table usuarios(
+    id number	
+    nombre varchar2(254),
+    contraseña varchar2(254),
+    dni varchar2(254),
+    CONSTRAINT pk_dni PRIMARY KEY (dni)
+);
