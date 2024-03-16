@@ -7,6 +7,31 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 public class funciones {
+    public static void añadirUsuarios(Connection connection, String url, String user, String password) {
+        try {
+
+            System.out.println("Dime el nombre de usuario");
+            String userName = io.leerString();
+            System.out.println("Dime la contraseña del usuario");
+            String userPass = io.leerString();
+            System.out.println("Como quieres que sea tu correo (la parte de @edu.uah.es se añade automaticamente)");
+            String userMail = io.leerString();
+
+            connection = DriverManager.getConnection(url, user, password);
+            PreparedStatement ps = connection.prepareStatement(
+                    "insert into usuarios (nombre, contraseña, correo) values (?,?,? || '@edu.uah.es')");
+            ps.setString(1, userName);
+            ps.setString(2, userPass);
+            ps.setString(3, userMail);
+
+            ps.execute();
+
+        } catch (SQLException e) {
+            System.out.println("Error en la conexión a la BBDD");
+            e.printStackTrace();
+        }
+    }
+
     public static void añadirLibros(Connection connection, String url, String user, String password) {
 
         try {
@@ -119,7 +144,7 @@ public class funciones {
         }
     }
 
-    public static void reservarLibro(Connection connection, String url, String user, String password, String name) {
+    public static void reservarLibro(Connection connection, String url, String user, String password, String userName) {
         try {
             connection = DriverManager.getConnection(url, user, password);
 
@@ -159,7 +184,7 @@ public class funciones {
 
                     PreparedStatement meterLibrosReservados = connection
                             .prepareStatement("insert into usuarioslibros (nombre, libro, ejemplares) values (?,?,?)");
-                    meterLibrosReservados.setString(1, name);
+                    meterLibrosReservados.setString(1, userName);
                     meterLibrosReservados.setString(2, nombreLibro);
                     meterLibrosReservados.setInt(3, unidadesReserva);
 
@@ -195,7 +220,7 @@ public class funciones {
 
                     PreparedStatement meterLibrosReservados = connection
                             .prepareStatement("insert into usuarioslibros (nombre, libro, ejemplares) values (?,?,?)");
-                    meterLibrosReservados.setString(1, name);
+                    meterLibrosReservados.setString(1, userName);
                     meterLibrosReservados.setString(2, nombreLibro);
                     meterLibrosReservados.setInt(3, unidadesReserva);
 

@@ -22,8 +22,11 @@ public class index {
 
             connection = DriverManager.getConnection(url, user, password);
 
-            System.out.println("Dime tu nombre: ");
-            String name = io.leerString();
+
+            System.out.println("Introduce tu nombre de usuario: ");
+            String userName = io.leerString();
+
+            funciones.añadirUsuarios(connection, url, user, password);
 
             while (true) {
                 if (connection != null) {
@@ -45,7 +48,7 @@ public class index {
                     } else if (opcion == 4) {
                         funciones.buscarLibro(connection, url, user, password);
                     } else if (opcion == 5){
-                        funciones.reservarLibro(connection, url, user, password, name);
+                        funciones.reservarLibro(connection, url, user, password, userName);
                     } else if (opcion == 6) {
                         System.exit(0);
                     } else {

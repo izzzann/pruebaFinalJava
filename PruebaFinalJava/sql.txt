@@ -1,7 +1,21 @@
 create table usuarios(
-    id number	
     nombre varchar2(254),
     contraseña varchar2(254),
-    dni varchar2(254),
-    CONSTRAINT pk_dni PRIMARY KEY (dni)
+    correo varchar2(254),
+    CONSTRAINT unique_nombre UNIQUE (nombre)
+);
+
+create table biblioteca(
+    nombre varchar2(254),
+    autor varchar2(254),
+    editorial varchar2(254),
+    ISBN number,
+    ejemplares number,
+    CONSTRAINT pk_isbn PRIMARY KEY (ISBN)
+);
+
+create table usuariosLibros(
+    nombre varchar2(254),
+    libro varchar2(254),
+    ejemplares number
 );
