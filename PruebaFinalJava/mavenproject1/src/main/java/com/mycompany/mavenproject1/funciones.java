@@ -5,30 +5,26 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLIntegrityConstraintViolationException;
 
 public class funciones {
-    public static void añadirUsuarios(Connection connection, String url, String user, String password) {
+    public static void añadirUsuarios(Connection connection, String url, String user, String password, String userName,
+            String userPass) {
         try {
-
-            System.out.println("Dime el nombre de usuario");
-            String userName = io.leerString();
-            System.out.println("Dime la contraseña del usuario");
-            String userPass = io.leerString();
-            System.out.println("Como quieres que sea tu correo (la parte de @edu.uah.es se añade automaticamente)");
-            String userMail = io.leerString();
 
             connection = DriverManager.getConnection(url, user, password);
             PreparedStatement ps = connection.prepareStatement(
                     "insert into usuarios (nombre, contraseña, correo) values (?,?,? || '@edu.uah.es')");
             ps.setString(1, userName);
             ps.setString(2, userPass);
-            ps.setString(3, userMail);
+            ps.setString(3, userName);
 
             ps.execute();
 
+        } catch (SQLIntegrityConstraintViolationException e) {
+            System.out.println("El nombre de usuario ya existe en la base de datos.");
         } catch (SQLException e) {
             System.out.println("Error en la conexión a la BBDD");
-            e.printStackTrace();
         }
     }
 
@@ -56,13 +52,15 @@ public class funciones {
             ps.setInt(5, bookNumber);
 
             ps.execute();
+        } catch (SQLIntegrityConstraintViolationException e) {
+            System.out.println(
+                    "Has violado la restricción de clave primaria, el ISBN o el nombre del libro ya existe en la base de datos.");
         } catch (SQLException e) {
             System.out.println("Error en la conexión a la BBDD");
-            e.printStackTrace();
         }
     }
 
-    public static void verTabla(Connection connection, String url, String user, String password) {
+    public static void verLibros(Connection connection, String url, String user, String password) {
         try {
             connection = DriverManager.getConnection(url, user, password);
             PreparedStatement ps = connection.prepareStatement("select * from biblioteca");
@@ -80,9 +78,7 @@ public class funciones {
             }
         } catch (SQLException e) {
             System.out.println("Error en la conexión a la BBDD");
-            e.printStackTrace();
         }
-
     }
 
     public static void eliminarLibros(Connection connection, String url, String user, String password) {
@@ -96,8 +92,6 @@ public class funciones {
             borrarUser.execute();
         } catch (SQLException e) {
             System.out.println("Error en la conexión a la BBDD");
-            e.printStackTrace();
-
         }
     }
 
@@ -140,7 +134,6 @@ public class funciones {
 
         } catch (SQLException e) {
             System.out.println("Error en la conexión a la BBDD");
-            e.printStackTrace();
         }
     }
 
@@ -233,7 +226,115 @@ public class funciones {
 
         } catch (SQLException e) {
             System.out.println("Error en la conexión a la BBDD");
-            e.printStackTrace();
         }
     }
+
+    public static void iniciarSesion(Connection connection, String url, String user, String password, String userName,
+            String userPass) {
+        try {
+            connection = DriverManager.getConnection(url, user, password);
+            PreparedStatement ps = connection.prepareStatement(
+                    "select * from usuarios where lower(nombre) like lower(?) and lower(contraseña) like lower(?)");
+            ps.setString(1, userName);
+            ps.setString(2, userPass);
+            ResultSet rst = ps.executeQuery();
+            if (rst.next()) {
+                System.out.println("Has iniciado sesion correctamente.");
+            } else {
+                System.out.println("Usuario o contraseña incorrectos.");
+            }
+        } catch (SQLException e) {
+            System.out.println("Error en la conexión a la BBDD");
+        }
+    }
+
+    public static void verReservas(Connection connection, String url, String user, String password, String userName) {
+        try {
+            connection = DriverManager.getConnection(url, user, password);
+
+            System.out.println("¿Quieres ver las reservas de todos los usuarios o solo las tuyas?");
+            System.out.println("1. Solo las mias");
+            System.out.println("2. Todas");
+            int opcionReservas = io.leerInt();
+
+            if (opcionReservas == 1) {
+                PreparedStatement ps = connection
+                        .prepareStatement("select * from usuarioslibros where lower(nombre) like lower(?)");
+                ps.setString(1, userName);
+
+                ResultSet rst = ps.executeQuery();
+
+                while (rst.next()) {
+                    System.out.println("Usuario: " + rst.getString(1) + " | " + "Libro: " + rst.getString(2) + " | "
+                            + "Ejemplares: " + rst.getInt(3));
+                }
+            } else if (opcionReservas == 2) {
+                PreparedStatement ps = connection.prepareStatement("select * from usuarioslibros");
+                ResultSet rst = ps.executeQuery();
+                while (rst.next()) {
+                    System.out.println("Usuario: " + rst.getString(1) + " | " + "Libro: " + rst.getString(2) + " | "
+                            + "Ejemplares: " + rst.getInt(3));
+                }
+            } else {
+                System.out.println("Opcion no valida");
+            }
+
+        } catch (SQLException e) {
+            System.out.println("Error en la conexión a la BBDD");
+        }
+        ;
+    }
 }
+
+// public static void registrarseOiniciarSesion(Connection connection, String
+// url, String user, String password) {
+// try {
+// System.out.println("Quieres registrarte o iniciar sesion");
+// System.out.println("1. Registrarte");
+// System.out.println("2. Iniciar sesion");
+// int opcionUsuarios = io.leerInt();
+
+// if (opcionUsuarios == 1) {
+
+// System.out.println("Introduce tu nombre de usuario: ");
+// String userName = io.leerString();
+// System.out.println("Introduce tu contraseña: ");
+// String userPass = io.leerString();
+// System.out.println("Correo genereado como: " + userName + "@edu.uah.es");
+// connection = DriverManager.getConnection(url, user, password);
+// PreparedStatement ps = connection.prepareStatement(
+// "insert into usuarios (nombre, contraseña, correo) values (?,?,? ||
+// '@edu.uah.es')");
+// ps.setString(1, userName);
+// ps.setString(2, userPass);
+// ps.setString(3, userName);
+
+// ps.execute();
+
+// } else if (opcionUsuarios == 2) {
+// System.out.println("Introduce tu nombre de usuario: ");
+// String userName = io.leerString();
+// System.out.println("Introduce tu contraseña: ");
+// String userPass = io.leerString();
+// connection = DriverManager.getConnection(url, user, password);
+// PreparedStatement ps = connection.prepareStatement(
+// "select * from usuarios where lower(nombre) like lower(?) and
+// lower(contraseña) like lower(?)");
+// ps.setString(1, userName);
+// ps.setString(2, userPass);
+// ResultSet rst = ps.executeQuery();
+// if (rst.next()) {
+// System.out.println("Has iniciado sesion correctamente.");
+// } else {
+// System.out.println("Usuario o contraseña incorrectos.");
+// }
+// } else {
+// System.out.println("Opcion no valida");
+// }
+// } catch (SQLIntegrityConstraintViolationException e) {
+// System.out.println("El nombre de usuario ya existe en la base de datos.");
+// } catch (SQLException e) {
+// System.out.println("Error en la conexión a la BBDD");
+
+// }
+// }

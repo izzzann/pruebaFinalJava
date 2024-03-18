@@ -1,8 +1,12 @@
+--dar permisos para crear identity
+
 create table usuarios(
+    UserID number generated as identity increment by 1 start with 1,
     nombre varchar2(254),
     contraseña varchar2(254),
     correo varchar2(254),
-    CONSTRAINT unique_nombre UNIQUE (nombre)
+    CONSTRAINT unique_nombre UNIQUE (nombre),
+    CONSTRAINT id_pk PRIMARY KEY (UserID)
 );
 
 create table biblioteca(
