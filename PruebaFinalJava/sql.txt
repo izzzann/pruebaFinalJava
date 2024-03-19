@@ -10,16 +10,23 @@ create table usuarios(
 );
 
 create table biblioteca(
+    bookID number generated as identity increment by 1 start with 1,
     nombre varchar2(254),
     autor varchar2(254),
     editorial varchar2(254),
     ISBN number,
     ejemplares number,
-    CONSTRAINT pk_isbn PRIMARY KEY (ISBN)
+    CONSTRAINT isbn_uniq UNIQUE (ISBN),
+    CONSTRAINT nombre_unique UNIQUE (nombre),
+    CONSTRAINT id_primary_key PRIMARY KEY (bookID)
 );
 
-create table usuariosLibros(
-    nombre varchar2(254),
-    libro varchar2(254),
-    ejemplares number
+create table reservas(
+    id_user number,
+    id_libro number,
+    ejemplares number,
+    CONSTRAINT id_user_fk FOREIGN KEY (id_user) REFERENCES usuarios(userid),
+    CONSTRAINT id_libro_fk FOREIGN KEY (id_libro) REFERENCES biblioteca(bookID)
 );
+
+commit;

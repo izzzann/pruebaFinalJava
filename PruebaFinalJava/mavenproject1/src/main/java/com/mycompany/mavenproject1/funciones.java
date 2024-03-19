@@ -98,30 +98,30 @@ public class funciones {
     public static void buscarLibro(Connection connection, String url, String user, String password) {
         try {
             connection = DriverManager.getConnection(url, user, password);
-            String buscarLibroPorAutor = null;
-            String buscarLibroPorNombre = null;
-            Integer buscarLibroPorISBN = 0;
-            System.out.println("¿Cómo quieres buscar el libro?");
-            System.out.println("1. Por autor");
-            System.out.println("2. Por nombre");
-            System.out.println("3. Por ISBN");
-            int comoBuscar = io.leerInt();
-            if (comoBuscar == 1) {
-                System.out.println("Dime el autor del libro que quieras buscar");
-                buscarLibroPorAutor = io.leerString();
-            } else if (comoBuscar == 2) {
-                System.out.println("Dime el nombre del libro que quieras buscar");
-                buscarLibroPorNombre = io.leerString();
-            } else if (comoBuscar == 3) {
-                System.out.println("Dime el ISBN del libro que quieras buscar");
-                buscarLibroPorISBN = buscarLibroPorISBN + io.leerInt();
-            }
+            System.out.println("Introduce el texto por el que quieras buscar el libro: ");
+            String buscar = io.leerString();
+            // String buscarLibroPorNombre = null;
+            // Integer buscarLibroPorISBN = 0;
+            // System.out.println("¿Cómo quieres buscar el libro?");
+            // System.out.println("1. Por autor");
+            // System.out.println("2. Por nombre");
+            // System.out.println("3. Por ISBN");
+            // int comoBuscar = io.leerInt();
+            // if (comoBuscar == 1) {
+            // System.out.println("Dime el autor del libro que quieras buscar");
+            // buscarLibroPorAutor = io.leerString();
+            // } else if (comoBuscar == 2) {
+            // System.out.println("Dime el nombre del libro que quieras buscar");
+            // buscarLibroPorNombre = io.leerString();
+            // } else if (comoBuscar == 3) {
+            // System.out.println("Dime el ISBN del libro que quieras buscar");
+            // buscarLibroPorISBN = buscarLibroPorISBN + io.leerInt();
+            // }
 
             PreparedStatement buscarUser = connection.prepareStatement(
-                    "select * from biblioteca where lower(autor) like lower(?) or lower(nombre) like lower(?) or isbn = ?");
-            buscarUser.setString(1, "%" + buscarLibroPorAutor + "%");
-            buscarUser.setString(2, "%" + buscarLibroPorNombre + "%");
-            buscarUser.setInt(3, buscarLibroPorISBN);
+                    "select * from biblioteca where lower(autor) like lower(?) or lower(nombre) like lower(?)");
+            buscarUser.setString(1, "%" + buscar + "%");
+            buscarUser.setString(2, "%" + buscar + "%");
 
             ResultSet rst = buscarUser.executeQuery();
 
@@ -142,61 +142,86 @@ public class funciones {
             connection = DriverManager.getConnection(url, user, password);
 
             System.out.println("¿Cómo quieres reservar el libro?");
-            System.out.println("1. Por nombre y autor");
+            System.out.println("1. Por titulo, autor y editorial");
             System.out.println("2. Por ISBN");
             int comoReservar = io.leerInt();
 
             if (comoReservar == 1) {
                 System.out.println("¿Que libro quieres reservar? (Introduce nombre y autor.)");
-                System.out.println("Nombre del libro: ");
+                System.out.println("Titulo del libro: ");
                 String nombreLibro = io.leerString();
                 System.out.println("Autor del libro: ");
                 String nombreAutor = io.leerString();
+                System.out.println("Editoral del libro: ");
+                String editorialLibro = io.leerString();
                 System.out.println("¿Cuantas unidades quieres reservar?");
                 Integer unidadesReserva = io.leerInt();
 
                 PreparedStatement buscarLibros = connection.prepareStatement(
-                        "select * from biblioteca where ejemplares >= ? and lower(autor) = lower(?) and lower(nombre) like lower(?)");
+                        "select * from biblioteca where ejemplares >= ? and lower(autor) = lower(?) and lower(nombre) like lower(?) and lower(editorial) like lower(?)");
                 buscarLibros.setInt(1, unidadesReserva);
                 buscarLibros.setString(2, nombreAutor);
                 buscarLibros.setString(3, nombreLibro);
+                buscarLibros.setString(4, editorialLibro);
 
                 ResultSet rst = buscarLibros.executeQuery();
 
                 if (!rst.next()) {
                     System.out.println("No se ha encontrado el libro o no hay suficientes ejemplares.");
                 } else {
-
                     PreparedStatement updateLibros = connection.prepareStatement(
-                            "update biblioteca set ejemplares = ejemplares - ? where lower(autor) like lower(?) and lower(nombre) like lower(?)");
+                            "update biblioteca set ejemplares = ejemplares - ? where lower(autor) like lower(?) and lower(nombre) like lower(?) and lower(editorial) like lower(?)");
                     updateLibros.setInt(1, unidadesReserva);
                     updateLibros.setString(2, nombreAutor);
                     updateLibros.setString(3, nombreLibro);
+                    updateLibros.setString(4, editorialLibro);
 
                     updateLibros.executeQuery();
 
+                    PreparedStatement obtenerUsuarios = connection
+                            .prepareStatement("select userID from usuarios where lower(nombre) like lower(?)");
+                    obtenerUsuarios.setString(1, userName);
+
+                    ResultSet rstUsuarios = obtenerUsuarios.executeQuery();
+
+                    Integer idUsuario = 0;
+                    while (rstUsuarios.next()) {
+                        idUsuario = rstUsuarios.getInt(1);
+                    }
+
+                    PreparedStatement obtenerLibros = connection.prepareStatement(
+                            "select bookID from biblioteca where lower(nombre) like lower(?) and lower(autor) like lower(?) and lower(editorial) like lower(?)");
+                    obtenerLibros.setString(1, nombreLibro);
+                    obtenerLibros.setString(2, nombreAutor);
+                    obtenerLibros.setString(3, editorialLibro);
+
+                    ResultSet rstLibros = obtenerLibros.executeQuery();
+
+                    Integer idLibro = 0;
+                    while (rstLibros.next()) {
+                        idLibro = rstLibros.getInt(1);
+                    }
+
                     PreparedStatement meterLibrosReservados = connection
-                            .prepareStatement("insert into usuarioslibros (nombre, libro, ejemplares) values (?,?,?)");
-                    meterLibrosReservados.setString(1, userName);
-                    meterLibrosReservados.setString(2, nombreLibro);
+                            .prepareStatement("insert into reservas (id_user, id_libro, ejemplares) values (?,?,?)");
+                    meterLibrosReservados.setInt(1, idUsuario);
+                    meterLibrosReservados.setInt(2, idLibro);
                     meterLibrosReservados.setInt(3, unidadesReserva);
 
                     meterLibrosReservados.execute();
+
                 }
             } else if (comoReservar == 2) {
                 System.out.println("¿Que libro quieres reservar? (Introduce ISBN y nombre del libro.)");
                 System.out.println("ISBN del libro: ");
                 Integer ISBNLibro = io.leerInt();
-                System.out.println("Nombre del libro: ");
-                String nombreLibro = io.leerString();
                 System.out.println("¿Cuantas unidades quieres reservar?");
                 Integer unidadesReserva = io.leerInt();
 
                 PreparedStatement buscarLibros = connection.prepareStatement(
-                        "select * from biblioteca where ejemplares >= ? and isbn = ? and lower(nombre) like lower(?)");
+                        "select * from biblioteca where ejemplares >= ? and isbn = ?");
                 buscarLibros.setInt(1, unidadesReserva);
                 buscarLibros.setInt(2, ISBNLibro);
-                buscarLibros.setString(3, nombreLibro);
 
                 ResultSet rst = buscarLibros.executeQuery();
 
@@ -204,17 +229,38 @@ public class funciones {
                     System.out.println("No se ha encontrado el libro o no hay suficientes ejemplares.");
                 } else {
                     PreparedStatement updateLibros = connection.prepareStatement(
-                            "update biblioteca set ejemplares = ejemplares - ? where isbn = ? and lower(nombre) like lower(?)");
+                            "update biblioteca set ejemplares = ejemplares - ? where isbn like ?");
                     updateLibros.setInt(1, unidadesReserva);
                     updateLibros.setInt(2, ISBNLibro);
-                    updateLibros.setString(3, nombreLibro);
 
                     updateLibros.executeQuery();
 
+                    PreparedStatement obtenerUsuarios = connection
+                            .prepareStatement("select userID from usuarios where lower(nombre) like lower(?)");
+                    obtenerUsuarios.setString(1, userName);
+
+                    ResultSet rstUsuarios = obtenerUsuarios.executeQuery();
+
+                    Integer idUsuario = 0;
+                    while (rstUsuarios.next()) {
+                        idUsuario = rstUsuarios.getInt(1);
+                    }
+
+                    PreparedStatement obtenerLibros = connection.prepareStatement(
+                            "select bookID from biblioteca where ISBN like ?");
+                    obtenerLibros.setInt(1, ISBNLibro);
+
+                    ResultSet rstLibros = obtenerLibros.executeQuery();
+
+                    Integer idLibro = 0;
+                    while (rstLibros.next()) {
+                        idLibro = rstLibros.getInt(1);
+                    }
+
                     PreparedStatement meterLibrosReservados = connection
-                            .prepareStatement("insert into usuarioslibros (nombre, libro, ejemplares) values (?,?,?)");
-                    meterLibrosReservados.setString(1, userName);
-                    meterLibrosReservados.setString(2, nombreLibro);
+                            .prepareStatement("insert into reservas (id_user, id_libro, ejemplares) values (?,?,?)");
+                    meterLibrosReservados.setInt(1, idUsuario);
+                    meterLibrosReservados.setInt(2, idLibro);
                     meterLibrosReservados.setInt(3, unidadesReserva);
 
                     meterLibrosReservados.execute();
@@ -258,27 +304,29 @@ public class funciones {
             int opcionReservas = io.leerInt();
 
             if (opcionReservas == 1) {
-                PreparedStatement ps = connection
-                        .prepareStatement("select * from usuarioslibros where lower(nombre) like lower(?)");
+                PreparedStatement ps = connection.prepareStatement(
+                        "select u.userid, u.nombre, b.nombre, r.ejemplares from usuarios u, biblioteca b, reservas r where u.userid = r.id_user and b.bookid = r.id_libro and lower(u.nombre) like lower(?)");
                 ps.setString(1, userName);
 
                 ResultSet rst = ps.executeQuery();
-
                 while (rst.next()) {
-                    System.out.println("Usuario: " + rst.getString(1) + " | " + "Libro: " + rst.getString(2) + " | "
-                            + "Ejemplares: " + rst.getInt(3));
+                    System.out.println("ID: " + rst.getInt(1) + " | " + "Usuario: " + rst.getString(2) + " | "
+                            + "Libro: " + rst.getString(3) + " | "
+                            + "Ejemplares: " + rst.getInt(4));
                 }
+
             } else if (opcionReservas == 2) {
-                PreparedStatement ps = connection.prepareStatement("select * from usuarioslibros");
+                PreparedStatement ps = connection.prepareStatement(
+                        "select u.userid, u.nombre, b.nombre, r.ejemplares from usuarios u, biblioteca b, reservas r where u.userid = r.id_user and b.bookid = r.id_libro");
                 ResultSet rst = ps.executeQuery();
                 while (rst.next()) {
-                    System.out.println("Usuario: " + rst.getString(1) + " | " + "Libro: " + rst.getString(2) + " | "
-                            + "Ejemplares: " + rst.getInt(3));
+                    System.out.println("ID: " + rst.getInt(1) + " | " + "Usuario: " + rst.getString(2) + " | "
+                            + "Libro: " + rst.getString(3) + " | "
+                            + "Ejemplares: " + rst.getInt(4));
                 }
             } else {
                 System.out.println("Opcion no valida");
             }
-
         } catch (SQLException e) {
             System.out.println("Error en la conexión a la BBDD");
         }
